@@ -6,7 +6,7 @@ let currentBlockNumber = 0;
 
 const generateNewBlock = () => ({ successors: [], insts: [], id: currentBlockNumber++ });
 
-const formBasicBlocks = (f: Function): Block[] => {
+export const formBasicBlocks = (f: Function): Block[] => {
     const blocks = [];
     let currentBlock: Block = generateNewBlock();
     for (const inst of f.instrs) {
@@ -43,4 +43,4 @@ const main = async () => {
     }
 }
 
-main();
+if (import.meta.main) main();
