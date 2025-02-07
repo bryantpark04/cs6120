@@ -67,7 +67,7 @@ const lvn = (block: Block): void => {
             inst.args = argValueNumbers?.map(valueNum => table[valueNum][1]);
 
             // TODO check if this is correct for print
-            if (!("op" in inst)) {
+            if (!("op" in inst) || inst.op === "call") {
                 return;
             }
 
