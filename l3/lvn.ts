@@ -1,6 +1,6 @@
 import { readStdin } from "../bril/bril-ts/util.ts";
 import { Function, Program, Instruction } from "../bril/bril-ts/bril.ts";
-import { dceTrivial, deleteReassignBeforeRead } from "./tdce.ts";
+import { dceTrivial, deleteReassignBeforeRead, effectOps } from "./tdce.ts";
 import { Block } from "../l2/types.ts";
 import { formBasicBlocks } from "../l2/basic_blocks.ts";
 import { deepEquals } from "./helpers.ts";
@@ -67,7 +67,7 @@ const lvn = (block: Block): void => {
             inst.args = argValueNumbers?.map(valueNum => table[valueNum][1]);
 
             // TODO check if this is correct for print
-            if (!("op" in inst) || inst.op === "call") {
+            if (!("op" in inst) || effectOps.has(inst.op)) {
                 return;
             }
 

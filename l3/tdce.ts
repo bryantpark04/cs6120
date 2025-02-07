@@ -17,7 +17,7 @@ const main = async () => {
     console.log(JSON.stringify(ast));
 }
 
-const effectOps = new Set(["br", "jmp", "print", "ret", "call", "store", "free", "speculate", "guard", "commit"]);
+export const effectOps = new Set(["br", "jmp", "print", "ret", "call", "store", "free", "speculate", "guard", "commit", "alloc"]);
 
 export const dceTrivial = (func: Function): boolean => {
     const originalLength = func.instrs.length;
