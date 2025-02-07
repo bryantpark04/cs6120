@@ -46,7 +46,7 @@ const LIVE_IN = "live-in" as const;
 type ValueTuple = { op: string, args: number[] } | typeof LIVE_IN;
 
 const lvn = (block: Block): void => {
-    const table: [ValueTuple, string][] = [];
+    const table: [ValueTuple, string, boolean][] = [];  // value, variable, valid
     const varToNum: Map<string, number> = new Map();
 
     block.insts.forEach((inst, idx) => {
@@ -59,7 +59,7 @@ const lvn = (block: Block): void => {
                 } else {
                     // live-in
                     const newValNum = table.length;
-                    table.push([LIVE_IN, arg]);
+                    table.push([LIVE_IN, arg, true]);
                     varToNum.set(arg, newValNum);
                     return newValNum;
                 }
@@ -82,17 +82,22 @@ const lvn = (block: Block): void => {
             } else { // newly computed value
                 valueNumber = table.length;
                 if ("dest" in inst) {
-                    const nextRead = block.insts
+                    const nextWrite = block.insts
                         .slice(idx + 1)
-                        .findIndex(laterInst => "args" in laterInst && laterInst.args?.indexOf(inst.dest) != -1);
-                    if (block.insts
-                        .slice(idx + 1, nextRead > -1 ? idx + 1 + nextRead : undefined)
-                        .findIndex(laterInst => "dest" in laterInst && laterInst.dest === inst.dest) 
-                        > -1) {
+                        .findIndex(laterInst => "dest" in laterInst && laterInst.dest === inst.dest);
+                    if (nextWrite > -1) {
+                        const oldDest = inst.dest;
                         inst.dest = freshVariableName();
+                        block.insts
+                            .slice(idx + 1, idx + 2 + nextWrite)
+                            .forEach(nextReadInst => {
+                                if ("args" in nextReadInst) {
+                                    nextReadInst.args = nextReadInst.args?.map(arg => arg === oldDest ? inst.dest : arg);
+                                }
+                            })
                     }
                     
-                    table.push([value, inst.dest]);
+                    table.push([value, inst.dest, true]);
                 }
             }
             if ("dest" in inst) {
