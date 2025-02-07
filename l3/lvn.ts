@@ -46,7 +46,7 @@ const LIVE_IN = "live-in" as const;
 type ValueTuple = { op: string, args: number[] } | typeof LIVE_IN;
 
 const lvn = (block: Block): void => {
-    const table: [ValueTuple, string, boolean][] = [];  // value, variable, valid
+    const table: [ValueTuple, string][] = [];  // value, variable, valid
     const varToNum: Map<string, number> = new Map();
 
     block.insts.forEach((inst, idx) => {
@@ -59,7 +59,7 @@ const lvn = (block: Block): void => {
                 } else {
                     // live-in
                     const newValNum = table.length;
-                    table.push([LIVE_IN, arg, true]);
+                    table.push([LIVE_IN, arg]);
                     varToNum.set(arg, newValNum);
                     return newValNum;
                 }
@@ -97,7 +97,7 @@ const lvn = (block: Block): void => {
                             })
                     }
                     
-                    table.push([value, inst.dest, true]);
+                    table.push([value, inst.dest]);
                 }
             }
             if ("dest" in inst) {
