@@ -32,7 +32,7 @@ const main = async () => {
         while (modified) {
             const blocks = formBasicBlocks(func);
             blocks.forEach(lvn);
-            console.error(blocks);
+            // console.error(blocks);
             func.instrs = blocks.flatMap(block => block.insts);
             modified = dceTrivial(func);
             modified = deleteReassignBeforeRead(func) || modified;
@@ -72,18 +72,21 @@ const lvn = (block: Block): void => {
             }
 
             const value: ValueTuple = { op: inst.op, args: argValueNumbers };
-            console.error(table);
+            // console.error(table);
             let valueNumber = table.findIndex(([tblVal, _]) => deepEquals(tblVal, value));
             if (valueNumber > -1) { // found - replace this inst with a copy
                 inst.op = "id"; // can I mutate it in-flight like this?
                 inst.args = [table[valueNumber][1]];
                 // TODO should I check to see if this is a function call or a branch?
-                console.error(inst);
+                // console.error(inst);
             } else { // newly computed value
                 valueNumber = table.length;
                 if ("dest" in inst) {
-                    if (block.insts
+                    const nextRead = block.insts
                         .slice(idx + 1)
+                        .findIndex(laterInst => "args" in laterInst && laterInst.args?.indexOf(inst.dest) != -1);
+                    if (block.insts
+                        .slice(idx + 1, nextRead > -1 ? idx + 1 + nextRead : undefined)
                         .findIndex(laterInst => "dest" in laterInst && laterInst.dest === inst.dest) 
                         > -1) {
                         inst.dest = freshVariableName();

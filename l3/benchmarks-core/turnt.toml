@@ -1,1 +1,1 @@
-command = "bril2json < {filename} | deno ../tdce.ts | brili {args}"
+command = "bril2json < {filename} | deno ../lvn.ts | brili {args}"
