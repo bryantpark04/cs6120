@@ -19,7 +19,7 @@ const main = async () => {
 
 const effectOps = new Set(["br", "jmp", "print", "ret", "call", "store", "free", "speculate", "guard", "commit"]);
 
-const dceTrivial = (func: Function): boolean => {
+export const dceTrivial = (func: Function): boolean => {
     const originalLength = func.instrs.length;
 
     const used = new Set(func.instrs.flatMap(inst => "args" in inst ? inst.args : []));
@@ -33,7 +33,7 @@ const dceTrivial = (func: Function): boolean => {
     return originalLength != func.instrs.length;
 }
 
-const deleteReassignBeforeRead = (func: Function): boolean => {
+export const deleteReassignBeforeRead = (func: Function): boolean => {
     const originalLength = func.instrs.length;
     func.instrs = formBasicBlocks(func)
         .flatMap(block => {
