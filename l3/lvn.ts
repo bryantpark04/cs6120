@@ -1,5 +1,5 @@
 import { readStdin } from "../bril/bril-ts/util.ts";
-import { Function, Program, Instruction } from "../bril/bril-ts/bril.ts";
+import { Program } from "../bril/bril-ts/bril.ts";
 import { dceTrivial, deleteReassignBeforeRead, effectOps } from "./tdce.ts";
 import { Block } from "../l2/types.ts";
 import { formBasicBlocks } from "../l2/basic_blocks.ts";
@@ -44,9 +44,21 @@ const main = async () => {
 
 const LIVE_IN = "live-in" as const;
 type ValueTuple = { op: string, args: number[] } | typeof LIVE_IN;
+const findValueInTable = (val: ValueTuple, table: [ValueTuple, string, boolean][]): number => {
+    if (val === "live-in") {
+        return -1;
+    }
+    for (let i = 0; i < table.length; ++i) {
+        const [tableValue, _, valid] = table[i];
+        if (!valid) continue;
+        if (deepEquals(val, tableValue)) return i;
+        if (val.op === "id" && val.args[0] == i) return i;
+    }
+    return -1;
+}
 
 const lvn = (block: Block): void => {
-    const table: [ValueTuple, string][] = [];  // value, variable, valid
+    const table: [ValueTuple, string, boolean][] = [];  // value, variable, valid
     const varToNum: Map<string, number> = new Map();
 
     block.insts.forEach((inst, idx) => {
@@ -54,12 +66,12 @@ const lvn = (block: Block): void => {
             // replace args
             const argValueNumbers = (inst.args ?? []).map(arg => {
                 const valueNumber = varToNum.get(arg);
-                if (valueNumber !== undefined) {
+                if (valueNumber !== undefined && table[valueNumber][2]) {
                     return valueNumber;
                 } else {
                     // live-in
                     const newValNum = table.length;
-                    table.push([LIVE_IN, arg]);
+                    table.push([LIVE_IN, arg, true]);
                     varToNum.set(arg, newValNum);
                     return newValNum;
                 }
@@ -73,7 +85,7 @@ const lvn = (block: Block): void => {
 
             const value: ValueTuple = { op: inst.op, args: argValueNumbers };
             // console.error(table);
-            let valueNumber = table.findIndex(([tblVal, _]) => deepEquals(tblVal, value));
+            let valueNumber = findValueInTable(value, table);
             if (valueNumber > -1) { // found - replace this inst with a copy
                 inst.op = "id"; // can I mutate it in-flight like this?
                 inst.args = [table[valueNumber][1]];
@@ -97,11 +109,16 @@ const lvn = (block: Block): void => {
                             })
                     }
                     
-                    table.push([value, inst.dest]);
+                    table.push([value, inst.dest, true]);
                 }
             }
             if ("dest" in inst) {
                 varToNum.set(inst.dest, valueNumber);
+                for (const row of table) {
+                    if (row[1] === inst.dest) {
+                        row[2] = false;
+                    }
+                }
             }
         }
     });
