@@ -35,9 +35,10 @@ export const dceTrivial = (func: Function): boolean => {
 
 export const deleteReassignBeforeRead = (func: Function): boolean => {
     const originalLength = func.instrs.length;
+    const usedInFunction = func.instrs.flatMap(inst => "args" in inst && inst.args ? inst.args : [])
     func.instrs = formBasicBlocks(func)
         .flatMap(block => {
-            const used = new Set<string>(block.insts.flatMap(inst => "args" in inst && inst.args ? inst.args : []));
+            const used = new Set<string>(usedInFunction);
             return block.insts
                 .toReversed()
                 .filter(inst => {
